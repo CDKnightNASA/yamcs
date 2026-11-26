@@ -57,7 +57,7 @@ public class CfsEventDecoder extends AbstractYamcsService implements StreamSubsc
     Integer appNameMax;
     Integer eventMsgMax;
 
-    // 12 bytes header + appNameMax + eventId(2) + eventType(2) + spacecraftId(4) + processorId(4)
+    // 16 bytes header + appNameMax + eventId(2) + eventType(2) + spacecraftId(4) + processorId(4)
     int minPacketLength;
 
     @Override
@@ -79,7 +79,10 @@ public class CfsEventDecoder extends AbstractYamcsService implements StreamSubsc
 
         appNameMax = config.getInt("appNameMax");
         eventMsgMax = config.getInt("eventMsgMax");
-        minPacketLength = 12 + appNameMax + 12;
+        minPacketLength =
+            16 // CFE_MSG_TelemetryHeader_t
+            + 12 // CFE_EVS_PacketID_t
+            + appNameMax;
 
         if (config.containsKey("streams")) {
             streamNames = config.getList("streams");
@@ -172,7 +175,7 @@ public class CfsEventDecoder extends AbstractYamcsService implements StreamSubsc
 
         ByteBuffer buf = ByteBuffer.wrap(packet);
         buf.order(byteOrder);
-        buf.position(12);
+        buf.position(16); // skip CFE_MSG_TelemetryHeader_t
         String app = decodeString(buf, appNameMax);
         int eventId = buf.getShort();
         int eventType = buf.getShort();
